@@ -1,70 +1,331 @@
-# Getting Started with Create React App
+# basic component
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Function version
 
-## Available Scripts
+```javascript
+import classes from './User.module.css';
+ 
+const User = (props) => {
+  return <li className={classes.user}>{props.name}</li>;
+};
+ 
+export default User;
+```
 
-In the project directory, you can run:
+Class version
 
-### `npm start`
+```javascript
+import { Component } from 'react';
+ 
+import classes from './User.module.css';
+ 
+class User extends Component {
+  render() {
+    return <li className={classes.user}>{this.props.name}</li>;
+  }
+}
+ 
+export default User;
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+# state and event
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Function version
 
-### `npm test`
+```javascript
+import { useState } from 'react';
+import User from './User';
+ 
+import classes from './Users.module.css';
+ 
+const DUMMY_USERS = [
+  { id: 'u1', name: 'Max' },
+  { id: 'u2', name: 'Manuel' },
+  { id: 'u3', name: 'Julie' },
+];
+ 
+const Users = () => {
+  const [showUsers, setShowUsers] = useState(true);
+ 
+  const toggleUsersHandler = () => {
+    setShowUsers((curState) => !curState);
+  };
+ 
+  const usersList = (
+    <ul>
+      {DUMMY_USERS.map((user) => (
+        <User key={user.id} name={user.name} />
+      ))}
+    </ul>
+  );
+ 
+  return (
+    <div className={classes.users}>
+      <button onClick={toggleUsersHandler}>
+        {showUsers ? 'Hide' : 'Show'} Users
+      </button>
+      {showUsers && usersList}
+    </div>
+  );
+};
+ 
+export default Users;
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Class version
 
-### `npm run build`
+```javascript
+import { Component } from 'react';
+ 
+import User from './User';
+import classes from './Users.module.css';
+ 
+const DUMMY_USERS = [
+  { id: 'u1', name: 'Max' },
+  { id: 'u2', name: 'Manuel' },
+  { id: 'u3', name: 'Julie' },
+];
+ 
+class Users extends Component {
+  constructor() {
+    super();
+    this.state = {
+      showUsers: true,
+      more: 'Test',
+    };
+  }
+ 
+  toggleUsersHandler() {
+    // this.state.showUsers = false; // NOT!
+    this.setState((curState) => {
+      return { showUsers: !curState.showUsers };
+    });
+  }
+ 
+  render() {
+    const usersList = (
+      <ul>
+        {DUMMY_USERS.map((user) => (
+          <User key={user.id} name={user.name} />
+        ))}
+      </ul>
+    );
+ 
+    return (
+      <div className={classes.users}>
+        <button onClick={this.toggleUsersHandler.bind(this)}>
+          {this.state.showUsers ? 'Hide' : 'Show'} Users
+        </button>
+        {this.state.showUsers && usersList}
+      </div>
+    );
+  }
+}
+ 
+export default Users;
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+# useEffect / side effects
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Function version
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```javascript
+import { Fragment, useState, useEffect } from 'react';
+ 
+import Users from './Users';
+import classes from './UserFinder.module.css';
+ 
+const DUMMY_USERS = [
+  { id: 'u1', name: 'Max' },
+  { id: 'u2', name: 'Manuel' },
+  { id: 'u3', name: 'Julie' },
+];
+ 
+const UserFinder = () => {
+  const [filteredUsers, setFilteredUsers] = useState(DUMMY_USERS);
+  const [searchTerm, setSearchTerm] = useState('');
+ 
+  useEffect(() => {
+    setFilteredUsers(
+      DUMMY_USERS.filter((user) => user.name.includes(searchTerm))
+    );
+  }, [searchTerm]);
+ 
+  const searchChangeHandler = (event) => {
+    setSearchTerm(event.target.value);
+  };
+ 
+  return (
+    <Fragment>
+      <div className={classes.finder}>
+        <input type='search' onChange={searchChangeHandler} />
+      </div>
+      <Users users={filteredUsers} />
+    </Fragment>
+  );
+};
+ 
+export default UserFinder;
+```
 
-### `npm run eject`
+Class version
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```javascript
+import { Fragment, useState, useEffect, Component } from 'react';
+ 
+import Users from './Users';
+import classes from './UserFinder.module.css';
+ 
+const DUMMY_USERS = [
+  { id: 'u1', name: 'Max' },
+  { id: 'u2', name: 'Manuel' },
+  { id: 'u3', name: 'Julie' },
+];
+ 
+class UserFinder extends Component {
+  constructor() {
+    super();
+    this.state = {
+      filteredUsers: [],
+      searchTerm: '',
+    };
+  }
+ 
+  componentDidMount() {
+    // Send http request...
+    this.setState({ filteredUsers: DUMMY_USERS });
+  }
+ 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.searchTerm !== this.state.searchTerm) {
+      this.setState({
+        filteredUsers: DUMMY_USERS.filter((user) =>
+          user.name.includes(this.state.searchTerm)
+        ),
+      });
+    }
+  }
+ 
+  searchChangeHandler(event) {
+    this.setState({ searchTerm: event.target.value });
+  }
+ 
+  render() {
+    return (
+      <Fragment>
+        <div className={classes.finder}>
+          <input type='search' onChange={this.searchChangeHandler.bind(this)} />
+        </div>
+        <Users users={this.state.filteredUsers} />
+      </Fragment>
+    );
+  }
+}
+ 
+export default UserFinder;
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Context 
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+https://github.com/fredericreact/classbasedcomponents/commit/2a4d6deaebb98a6330542c4cb7116331e7edf20f 
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Provide same as function
 
-## Learn More
+```javascript
+import React from 'react';
+ 
+const UsersContext = React.createContext({
+  users: []
+});
+ 
+export default UsersContext;
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```javascript
+import UserFinder from './components/UserFinder';
+import UsersContext from './store/users-context';
+ 
+const DUMMY_USERS = [
+  { id: 'u1', name: 'Max' },
+  { id: 'u2', name: 'Manuel' },
+  { id: 'u3', name: 'Julie' },
+];
+ 
+function App() {
+  const usersContext = {
+    users: DUMMY_USERS
+  }
+ 
+  return (
+    <UsersContext.Provider value={usersContext}>
+      <UserFinder />
+    </UsersContext.Provider>
+  );
+}
+ 
+export default App;
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+UseContext different vs function version
 
-### Code Splitting
+```javascript
+import { Fragment, useState, useEffect, Component } from 'react';
+ 
+import Users from './Users';
+import classes from './UserFinder.module.css';
+import UsersContext from '../store/users-context';
+ 
+class UserFinder extends Component {
+  static contextType = UsersContext;
+ 
+  constructor() {
+    super();
+    this.state = {
+      filteredUsers: [],
+      searchTerm: '',
+    };
+  }
+ 
+  componentDidMount() {
+    // Send http request...
+    this.setState({ filteredUsers: this.context.users });
+  }
+ 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.searchTerm !== this.state.searchTerm) {
+      this.setState({
+        filteredUsers: this.context.users.filter((user) =>
+          user.name.includes(this.state.searchTerm)
+        ),
+      });
+    }
+  }
+ 
+  searchChangeHandler(event) {
+    this.setState({ searchTerm: event.target.value });
+  }
+ 
+  render() {
+    return (
+      <Fragment>
+        <div className={classes.finder}>
+          <input type='search' onChange={this.searchChangeHandler.bind(this)} />
+        </div>
+        <Users users={this.state.filteredUsers} />
+      </Fragment>
+    );
+  }
+}
+ 
+ 
+ 
+export default UserFinder;
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# Error boundaries
 
-### Analyzing the Bundle Size
+C’est comme try catch dans javascript
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Ca permet de handle les erreur proprement. 
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Les erreur bouderies ne peux etre gerees que par des classes
